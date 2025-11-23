@@ -1,0 +1,308 @@
+# MPK VPS - Command Cheatsheet
+
+## 🚀 FIRST TIME SETUP (Copy & Paste These Commands)
+
+# 1. SSH into your VPS
+ssh root@YOUR_VPS_IP
+
+# 2. Run automated setup (ONE COMMAND!)
+curl -fsSL https://raw.githubusercontent.com/Dutasampolaen/mpktahuninikeren/main/deploy.sh | bash
+
+# That's it! Your site will be live at https://mpk.aynshop.com in ~5 minutes
+
+===============================================
+
+## 📝 MANUAL SETUP (If you prefer step-by-step)
+
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs nginx certbot python3-certbot-nginx git
+
+# Clone repository
+sudo mkdir -p /var/www/mpk
+cd /var/www/mpk
+sudo git clone https://github.com/Dutasampolaen/mpktahuninikeren.git .
+
+# Configure environment
+sudo nano /var/www/mpk/.env
+# Add your Supabase credentials, then save (Ctrl+O, Enter, Ctrl+X)
+
+# Build application
+sudo npm install
+sudo npm run build
+
+# Configure Nginx
+sudo nano /etc/nginx/sites-available/mpk
+# Paste the nginx config from VPS_SETUP.md
+
+sudo ln -s /etc/nginx/sites-available/mpk /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+
+# Setup SSL
+sudo certbot --nginx -d mpk.aynshop.com -d www.mpk.aynshop.com
+
+# Configure firewall
+sudo ufw allow 'Nginx Full'
+sudo ufw allow OpenSSH
+sudo ufw enable
+
+===============================================
+
+## 🔄 UPDATE SITE (After pushing to GitHub)
+
+cd /var/www/mpk
+sudo ./update.sh
+
+# OR manually:
+cd /var/www/mpk
+sudo git pull
+sudo npm install
+sudo npm run build
+sudo systemctl restart nginx
+
+===============================================
+
+## 🔍 MONITORING & TROUBLESHOOTING
+
+# Check if site is running
+sudo systemctl status nginx
+curl -I https://mpk.aynshop.com
+
+# View logs
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+
+# Restart services
+sudo systemctl restart nginx
+
+# Check SSL certificate
+sudo certbot certificates
+
+# Renew SSL manually (auto-renews automatically)
+sudo certbot renew
+
+# Check disk space
+df -h
+
+# Check memory
+free -h
+
+# Monitor processes
+htop
+
+===============================================
+
+## 🛠️ NGINX COMMANDS
+
+# Test configuration
+sudo nginx -t
+
+# Restart
+sudo systemctl restart nginx
+
+# Stop
+sudo systemctl stop nginx
+
+# Start
+sudo systemctl start nginx
+
+# Reload (no downtime)
+sudo systemctl reload nginx
+
+# View config
+sudo cat /etc/nginx/sites-available/mpk
+
+# Edit config
+sudo nano /etc/nginx/sites-available/mpk
+
+===============================================
+
+## 🔐 SECURITY COMMANDS
+
+# Check firewall status
+sudo ufw status
+
+# Allow port
+sudo ufw allow 80
+sudo ufw allow 443
+
+# Block IP
+sudo ufw deny from 1.2.3.4
+
+# Enable firewall
+sudo ufw enable
+
+===============================================
+
+## 💾 BACKUP COMMANDS
+
+# Create backup
+sudo tar -czf ~/mpk-backup-$(date +%Y%m%d).tar.gz /var/www/mpk
+
+# List backups
+ls -lh ~/mpk-backup-*
+
+# Download backup to local machine (run on your computer)
+scp root@YOUR_VPS_IP:~/mpk-backup-*.tar.gz .
+
+# Restore from backup
+sudo tar -xzf ~/mpk-backup-YYYYMMDD.tar.gz -C /
+
+===============================================
+
+## 🔧 GIT COMMANDS (On VPS)
+
+cd /var/www/mpk
+
+# Check current status
+sudo git status
+
+# Pull latest changes
+sudo git pull origin main
+
+# View commit history
+sudo git log --oneline -10
+
+# Discard local changes
+sudo git reset --hard origin/main
+
+===============================================
+
+## 📊 DATABASE COMMANDS (Supabase SQL Editor)
+
+-- Make user admin
+UPDATE users
+SET roles = '["admin"]'::jsonb
+WHERE email = 'your-email@example.com';
+
+-- Check all users
+SELECT id, name, email, roles FROM users;
+
+-- Check commissions
+SELECT * FROM commissions ORDER BY name;
+
+-- Check programs
+SELECT id, name, status FROM programs ORDER BY created_at DESC;
+
+-- Check assignments
+SELECT
+  p.name as program,
+  u.name as member,
+  pa.role
+FROM panitia_assignments pa
+JOIN programs p ON pa.program_id = p.id
+JOIN users u ON pa.user_id = u.id;
+
+===============================================
+
+## 🎯 QUICK FIXES
+
+# Site not loading
+sudo systemctl restart nginx
+sudo systemctl status nginx
+
+# SSL error
+sudo certbot renew --force-renewal
+sudo systemctl restart nginx
+
+# Out of disk space
+sudo apt clean
+sudo apt autoremove
+df -h
+
+# High memory usage
+sudo systemctl restart nginx
+free -h
+
+# Permission issues
+sudo chown -R www-data:www-data /var/www/mpk
+
+# Build fails
+cd /var/www/mpk
+sudo rm -rf node_modules
+sudo npm install
+sudo npm run build
+
+===============================================
+
+## 📱 DNS COMMANDS (Check propagation)
+
+# Check DNS
+nslookup mpk.aynshop.com
+
+# Detailed DNS info
+dig mpk.aynshop.com
+
+# Check from multiple locations
+curl -s "https://dns.google/resolve?name=mpk.aynshop.com&type=A" | jq
+
+===============================================
+
+## 🚨 EMERGENCY COMMANDS
+
+# Service won't start
+sudo systemctl restart nginx
+sudo journalctl -u nginx -n 50
+
+# Site hacked/compromised
+sudo systemctl stop nginx
+sudo ufw deny 80
+sudo ufw deny 443
+# Then investigate and restore from backup
+
+# Out of resources
+sudo systemctl stop nginx
+sudo apt clean
+sudo journalctl --vacuum-time=3d
+sudo reboot
+
+===============================================
+
+## 📞 SYSTEM INFO
+
+# Ubuntu version
+lsb_release -a
+
+# Node.js version
+node --version
+
+# Nginx version
+nginx -v
+
+# Check all services
+sudo systemctl list-units --type=service --state=running
+
+# Server uptime
+uptime
+
+# Who's logged in
+who
+
+===============================================
+
+## 💡 USEFUL ALIASES (Add to ~/.bashrc)
+
+echo "alias mpk='cd /var/www/mpk'" >> ~/.bashrc
+echo "alias mpk-logs='sudo tail -f /var/log/nginx/error.log'" >> ~/.bashrc
+echo "alias mpk-update='cd /var/www/mpk && sudo ./update.sh'" >> ~/.bashrc
+echo "alias mpk-restart='sudo systemctl restart nginx'" >> ~/.bashrc
+source ~/.bashrc
+
+# Then you can just type:
+mpk              # Go to site directory
+mpk-logs         # View logs
+mpk-update       # Update site
+mpk-restart      # Restart nginx
+
+===============================================
+
+REMEMBER: Your site is at /var/www/mpk
+          Config is at /etc/nginx/sites-available/mpk
+          Logs are at /var/log/nginx/
+
+Need help? Check VPS_SETUP.md for detailed instructions!
