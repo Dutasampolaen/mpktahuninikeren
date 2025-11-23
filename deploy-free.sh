@@ -47,9 +47,11 @@ echo -e "${YELLOW}Step 7: Clone Repository${NC}"
 sudo mkdir -p $APP_DIR
 cd $APP_DIR
 if [ -d ".git" ]; then
+  sudo git config --global --add safe.directory $APP_DIR
   sudo git pull origin main
 else
   sudo git clone https://github.com/Dutasampolaen/mpktahuninikeren.git .
+  sudo git config --global --add safe.directory $APP_DIR
 fi
 
 echo ""
