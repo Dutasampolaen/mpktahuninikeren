@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { api, setAuthToken, getAuthToken } from '../lib/api';
 
 interface User {
   id: string;
@@ -28,74 +28,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        if (event === 'SIGNED_IN' && session) {
-          await fetchUserData(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-      })();
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, []);
 
   async function checkUser() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await fetchUserData(session.user.id);
+      const token = getAuthToken();
+      if (token) {
+        const userData = await api.auth.me();
+        const roles = typeof userData.roles === 'string' ? JSON.parse(userData.roles) : userData.roles;
+        setUser({
+          ...userData,
+          roles,
+        });
       }
     } catch (error) {
       console.error('Error checking user:', error);
+      setAuthToken(null);
     } finally {
       setLoading(false);
     }
   }
 
-  async function fetchUserData(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data) {
-        setUser({
-          id: data.id,
-          name: data.name,
-          nis: data.nis,
-          email: data.email,
-          roles: data.roles as string[],
-          commission_id: data.commission_id,
-          class: data.class,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-  }
-
   async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const response = await api.auth.login(email, password);
+    setAuthToken(response.access_token);
+    const roles = typeof response.user.roles === 'string' ? JSON.parse(response.user.roles) : response.user.roles;
+    setUser({
+      ...response.user,
+      roles,
     });
-
-    if (error) throw error;
-    if (data.user) {
-      await fetchUserData(data.user.id);
-    }
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    setAuthToken(null);
     setUser(null);
   }
 
