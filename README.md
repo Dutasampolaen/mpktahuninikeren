@@ -126,29 +126,25 @@ npm run dev
 npm run build
 ```
 
-### Demo Accounts
+### Initial Setup
 
-All user accounts are now properly created through Supabase Auth:
+The database has been cleared and is ready for fresh data. After deployment:
 
-**Admin Account:**
-- Email: `admin@mpk.school`
-- Password: `admin123`
-- Roles: Admin, Grader
-- Can access all features
+1. **Create your first admin account** by signing up through the UI
+2. **Run this SQL** in Supabase SQL Editor to make yourself admin:
+   ```sql
+   UPDATE users
+   SET roles = '["admin"]'::jsonb
+   WHERE email = 'your-email@example.com';
+   ```
 
-**Grader Accounts:**
-- Email: `budi@mpk.school` / Password: `password123`
-- Email: `siti@mpk.school` / Password: `password123`
-- Roles: Grader, Member
-- Can score programs and view assignments
+3. **Import members** using the Bulk Import feature:
+   - CSV format: `name,nis,email,password,class,commission`
+   - Example: `John Doe,10001,john@school.com,pass123,10A,Sekbid 1`
 
-**Member Accounts:**
-- Email: `ahmad@mpk.school`, `dewi@mpk.school`, `rizki@mpk.school`, `maya@mpk.school`, `eko@mpk.school`, `linda@mpk.school`, `farhan@mpk.school`
-- Password: `password123` (all members)
-- Role: Member
-- Can view relevant data
-
-**Total: 10 members across 3 commissions (Komisi A, B, C)**
+**Available Commissions:**
+- Komisi A, B, C
+- Sekbid 1, 2, 3, 4, 5, 6, 7, 8, 9
 
 ## Usage Guide
 
