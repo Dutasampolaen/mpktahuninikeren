@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { User, Commission } from '../types';
 import { UserPlus, X, Edit2, Upload } from 'lucide-react';
 

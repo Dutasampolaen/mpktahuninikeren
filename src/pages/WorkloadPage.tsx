@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { User, Commission } from '../types';
 import { AlertCircle, Award } from 'lucide-react';
 
@@ -14,20 +14,17 @@ export default function WorkloadPage() {
 
   async function loadData() {
     try {
-      const [usersRes, commissionsRes] = await Promise.all([
-        supabase
-          .from('users')
-          .select('*')
-          .eq('is_active', true)
-          .order('total_assigned_programs', { ascending: false }),
-        supabase.from('commissions').select('*'),
+      const [allUsers, commissions] = await Promise.all([
+        api.users.list(),
+        api.commissions.list(),
       ]);
 
-      if (usersRes.error) throw usersRes.error;
-      if (commissionsRes.error) throw commissionsRes.error;
+      const activeUsers = allUsers
+        .filter((u: any) => u.is_active)
+        .sort((a: any, b: any) => b.total_assigned_programs - a.total_assigned_programs);
 
-      setUsers(usersRes.data || []);
-      setCommissions(commissionsRes.data || []);
+      setUsers(activeUsers);
+      setCommissions(commissions);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

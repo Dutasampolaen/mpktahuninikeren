@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Program, Score, ScoringRubric } from '../types';
 import { FileText, Clock, CheckCircle, MessageSquare } from 'lucide-react';

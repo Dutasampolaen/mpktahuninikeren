@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Program, PanitiaAssignment, User, Commission } from '../types';
 import { Users, RefreshCw, Save, Lock, Unlock, AlertTriangle, Plus } from 'lucide-react';
 import { PANITIA_ROLES } from '../types';

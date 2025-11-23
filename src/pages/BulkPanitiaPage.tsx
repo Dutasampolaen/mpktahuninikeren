@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Program } from '../types';
 import { CheckSquare, Square, Users } from 'lucide-react';
 
@@ -67,15 +67,10 @@ export default function BulkPanitiaPage() {
           const program = programs.find(p => p.id === programId);
           if (!program) continue;
 
-          const { data: availableMembers, error: rpcError } = await supabase
-            .rpc('get_available_members_for_timerange', {
-              p_start_datetime: program.start_datetime,
-              p_end_datetime: program.end_datetime,
-            });
+          const availableMembers = await api.users.list();
+          const activeMembers = availableMembers.filter((u: any) => u.is_active);
 
-          if (rpcError) throw rpcError;
-
-          if (!availableMembers || availableMembers.length < 4) {
+          if (!activeMembers || activeMembers.length < 4) {
             errors.push(`${program.name}: Not enough available members`);
             errorCount++;
             continue;
@@ -85,8 +80,8 @@ export default function BulkPanitiaPage() {
           const newAssignments = [];
           const assignedUserIds = new Set<string>();
 
-          for (let i = 0; i < Math.min(requiredRoles.length, availableMembers.length); i++) {
-            const member = availableMembers[i];
+          for (let i = 0; i < Math.min(requiredRoles.length, activeMembers.length); i++) {
+            const member = activeMembers[i];
             if (!assignedUserIds.has(member.id)) {
               newAssignments.push({
                 program_id: programId,
@@ -101,17 +96,13 @@ export default function BulkPanitiaPage() {
           }
 
           if (newAssignments.length >= 3) {
-            await supabase.from('panitia_assignments').delete().eq('program_id', programId);
-            const { error: insertError } = await supabase
-              .from('panitia_assignments')
-              .insert(newAssignments);
-
-            if (insertError) {
-              errors.push(`${program.name}: ${insertError.message}`);
-              errorCount++;
-            } else {
-              successCount++;
+            const existingAssignments = await api.panitiaAssignments.list({ program_id: programId });
+            for (const assignment of existingAssignments) {
+              await api.panitiaAssignments.delete(assignment.id);
             }
+
+            await api.panitiaAssignments.bulkCreate(newAssignments);
+            successCount++;
           } else {
             errors.push(`${program.name}: Could not generate minimum members`);
             errorCount++;

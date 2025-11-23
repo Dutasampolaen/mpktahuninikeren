@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 
 interface ProgramType {

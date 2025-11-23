@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import {
   LayoutDashboard,
   FileText,
@@ -36,12 +36,9 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
   async function loadNotifications() {
     if (!user) return;
     try {
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-      setUnreadCount(count || 0);
+      const notifications = await api.notifications.list();
+      const unread = notifications.filter((n: any) => !n.is_read && n.user_id === user.id);
+      setUnreadCount(unread.length);
     } catch (error) {
       console.error('Error loading notifications:', error);
     }

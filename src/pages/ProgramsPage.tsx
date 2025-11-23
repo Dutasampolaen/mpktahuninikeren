@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Program } from '../types';
 import { Plus, Search, Filter, Edit2, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';

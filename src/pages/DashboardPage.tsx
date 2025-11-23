@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { FileText, Users, ClipboardCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -26,26 +26,21 @@ export default function DashboardPage() {
 
   async function loadStats() {
     try {
-      const [programsRes, scoresRes, assignmentsRes, usersRes] = await Promise.all([
-        supabase.from('programs').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('scores')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_draft', true)
-          .eq('grader_id', user?.id || ''),
-        supabase.from('panitia_assignments').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('users')
-          .select('total_assigned_programs')
-          .eq('is_active', true)
-          .gt('total_assigned_programs', 5),
+      const [programs, scores, assignments, users] = await Promise.all([
+        api.programs.list(),
+        api.scores.list({ grader_id: user?.id }),
+        api.panitiaAssignments.list(),
+        api.users.list(),
       ]);
 
+      const pendingScores = scores.filter((s: any) => s.is_draft && s.grader_id === user?.id);
+      const overloadedMembers = users.filter((u: any) => u.is_active && u.total_assigned_programs > 5);
+
       setStats({
-        totalPrograms: programsRes.count || 0,
-        pendingScores: scoresRes.count || 0,
-        activeAssignments: assignmentsRes.count || 0,
-        overloadedMembers: usersRes.data?.length || 0,
+        totalPrograms: programs.length,
+        pendingScores: pendingScores.length,
+        activeAssignments: assignments.length,
+        overloadedMembers: overloadedMembers.length,
       });
     } catch (error) {
       console.error('Error loading stats:', error);
